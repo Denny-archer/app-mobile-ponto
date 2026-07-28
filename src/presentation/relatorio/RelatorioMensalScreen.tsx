@@ -56,7 +56,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
       const data = encodeURIComponent(formatMonthApiDate(month));
       await downloadAuthenticatedPdf(`/batidas/relatorio-mensal/${userId}?data=${data}`, `relatorio-${userId}-${formatMonthApiDate(month)}.pdf`);
     } catch (error) {
-      Alert.alert("Erro", error instanceof Error ? error.message : "NÃ£o foi possÃ­vel abrir o relatÃ³rio.");
+      Alert.alert("Erro", error instanceof Error ? error.message : "Não foi possível abrir o relatório.");
     } finally {
       setDownloading(false);
     }
@@ -64,7 +64,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
 
   return (
     <Screen scroll>
-      <MobileHeader canGoBack onBack={navigation.goBack} title="RelatÃ³rio mensal" action="download" onAction={handleDownload} />
+      <MobileHeader canGoBack onBack={navigation.goBack} title="Relatorio mensal" action="download" onAction={handleDownload} />
 
       <View style={styles.stack}>
         <View style={styles.monthSelector}>
@@ -72,7 +72,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
             <ChevronLeft color={colors.text} size={18} />
           </Pressable>
           <View style={styles.monthBox}>
-            <Text style={styles.monthLabel}>MÃªs</Text>
+            <Text style={styles.monthLabel}>Mês</Text>
             <Text style={styles.monthValue}>{formatMonthName(month)}</Text>
           </View>
           <View style={styles.monthBox}>
@@ -90,7 +90,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
             <StatusBadge label={espelhoQuery.isFetching ? "Atualizando" : "Fechado"} />
           </View>
           <Text style={styles.total}>{formatMinutesCompact(totalMinutos)}</Text>
-          <Text style={styles.totalCaption}>Total trabalhado no mÃªs</Text>
+          <Text style={styles.totalCaption}>Total trabalhado no mês</Text>
 
           <View style={styles.metricsRow}>
             <View style={styles.metricBox}>
@@ -108,7 +108,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
           </View>
         </InfoCard>
 
-        <InfoCard title="DistribuiÃ§Ã£o semanal" subtitle="Horas trabalhadas por semana do mÃªs.">
+        <InfoCard title="Distribuição semanal" subtitle="Horas trabalhadas por semana do Mês.">
           <View style={styles.weekList}>
             {semanas.map((minutes, index) => {
               const width = `${Math.max(4, Math.round((minutes / maxSemana) * 100))}%` as `${number}%`;
@@ -131,8 +131,8 @@ export function RelatorioMensalScreen({ navigation }: Props) {
               <FileText color={colors.primary} size={20} />
             </View>
             <View style={styles.lastContent}>
-              <Text style={styles.lastTitle}>Ãšltimo registro: {ultimaBatida ? (ultimaBatida.tipo === "E" ? "Entrada" : "SaÃ­da") : "-"}</Text>
-              <Text style={styles.lastSubtitle}>{ultimaBatida ? `${toISODate(new Date(ultimaBatida.data_batida))} Ã s ${formatTime(ultimaBatida.data_batida)}` : "Nenhuma batida no perÃ­odo"}</Text>
+              <Text style={styles.lastTitle}>Último registro: {ultimaBatida ? (ultimaBatida.tipo === "E" ? "Entrada" : "Saída") : "-"}</Text>
+              <Text style={styles.lastSubtitle}>{ultimaBatida ? `${toISODate(new Date(ultimaBatida.data_batida))} às ${formatTime(ultimaBatida.data_batida)}` : "Nenhuma batida no período"}</Text>
             </View>
           </View>
         </InfoCard>
@@ -141,7 +141,7 @@ export function RelatorioMensalScreen({ navigation }: Props) {
           leftIcon={<Download color={colors.white} size={17} />}
           loading={downloading}
           onPress={handleDownload}
-          title="Baixar relatÃ³rio mensal"
+          title="Baixar relatório mensal"
         />
       </View>
     </Screen>

@@ -21,7 +21,7 @@ import { typography } from "../theme/typography";
 type Props = NativeStackScreenProps<AppStackParamList, "RegistrarPonto">;
 
 function tipoLabel(tipo: string) {
-  return tipo === "E" ? "entrada" : "saÃƒÂ­da";
+  return tipo === "E" ? "entrada" : "saída";
 }
 
 export function RegistrarPontoScreen({ navigation, route }: Props) {
@@ -35,7 +35,7 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
 
   async function handleRegistrar() {
     if (!cameraRef.current || !isCameraReady) {
-      Alert.alert("CÃƒÂ¢mera indisponÃƒÂ­vel", "Aguarde a cÃƒÂ¢mera ficar pronta.");
+      Alert.alert("Câmera indisponível", "Aguarde a câmera ficar pronta.");
       return;
     }
 
@@ -44,7 +44,7 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.65, shutterSound: false });
 
       if (!photo?.uri) {
-        throw new Error("NÃƒÂ£o foi possÃƒÂ­vel capturar a selfie.");
+        throw new Error("Não foi possível capturar a selfie.");
       }
 
       const batida = await pontoUseCases.registrarPonto({
@@ -69,8 +69,8 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
 
       <View style={styles.stack}>
         <View style={styles.photoHeader}>
-          <Text style={styles.sectionLabel}>Foto do colaborador</Text>
-          <Text style={styles.cameraStatus}>{permission?.granted ? "cÃƒÂ¢mera ativa" : "permissÃƒÂ£o pendente"}</Text>
+          <Text style={styles.sectionLabel}>Foto para validação</Text>
+          <Text style={styles.cameraStatus}>{permission?.granted ? "Câmera ativa" : "Permissão pendente"}</Text>
         </View>
 
         <View style={styles.cameraBox}>
@@ -92,9 +92,9 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
           ) : (
             <View style={styles.permissionBox}>
               <Camera color={colors.primary} size={36} />
-              <Text style={styles.permissionTitle}>Permita o acesso ÃƒÂ  cÃƒÂ¢mera</Text>
-              <Text style={styles.permissionText}>A selfie ÃƒÂ© obrigatÃƒÂ³ria para validar a batida biomÃƒÂ©trica.</Text>
-              <AppButton onPress={() => { void requestPermission(); }} title="Permitir cÃƒÂ¢mera" />
+              <Text style={styles.permissionTitle}>Permita o acesso à câmera</Text>
+              <Text style={styles.permissionText}>A selfie é obrigatória para validar a batida biométrica.</Text>
+              <AppButton onPress={() => { void requestPermission(); }} title="Permitir câmera" />
             </View>
           )}
         </View>
@@ -109,9 +109,9 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
             <Text style={styles.detailValue}>{formatDateLong(new Date())}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tipo e HorÃƒÂ¡rio</Text>
+            <Text style={styles.detailLabel}>Tipo e Horário</Text>
             <View style={styles.typeRow}>
-              <StatusBadge label={tipo === "E" ? "Entrada" : "SaÃƒÂ­da"} />
+              <StatusBadge label={tipo === "E" ? "Entrada" : "Saída"} />
               <Text style={styles.detailValue}>{formatTime(new Date())}</Text>
             </View>
           </View>

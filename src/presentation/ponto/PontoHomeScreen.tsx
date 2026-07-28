@@ -94,8 +94,13 @@ export function PontoHomeScreen({ navigation }: Props) {
 
         <InfoCard>
           <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Resumo de hoje</Text>
-            <Text style={styles.openStatus}>{saldoQuery.data?.status ?? "Em aberto"}</Text>
+            <Text style={styles.cardTitle}>
+              Resumo de hoje
+            </Text>
+
+            <StatusBadge
+              label={saldoQuery.data?.status ?? "Em aberto"}
+            />
           </View>
           <View style={styles.summaryRows}>
             <View style={styles.summaryRow}>
@@ -107,7 +112,7 @@ export function PontoHomeScreen({ navigation }: Props) {
               <Text style={styles.summaryValue}>{ultimaSaida ? formatTime(ultimaSaida.data_batida) : "--:--"}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Jornada</Text>
+              <Text style={styles.summaryLabel}>Tempo trabalhado</Text>
               <Text style={styles.summaryValueStrong}>{saldoQuery.data?.tempo_trabalhado ?? "00:00"}</Text>
             </View>
           </View>
@@ -117,25 +122,44 @@ export function PontoHomeScreen({ navigation }: Props) {
           leftIcon={<Download color={colors.blue} size={17} />}
           loading={downloading}
           onPress={handleComprovante}
-          title="Ver comprovante"
+          title="Baixar comprovante"
           variant="secondary"
         />
 
-        <View style={styles.footerActions}>
-          <AppButton
-            leftIcon={<CalendarDays color={colors.primary} size={17} />}
+        <View style={styles.quickActions}>
+          <InfoCard
+            style={styles.quickCard}
             onPress={() => navigation.navigate("PontosBatidos")}
-            style={styles.footerButton}
-            title="Pontos batidos"
-            variant="outline"
-          />
-          <AppButton
-            leftIcon={<FileText color={colors.primary} size={17} />}
+          >
+            <View style={styles.quickIcon}>
+              <CalendarDays color={colors.primary} size={28} />
+            </View>
+
+            <Text style={styles.quickTitle}>
+              Pontos batidos
+            </Text>
+
+            <Text style={styles.quickSubtitle}>
+              Ver histórico de registros
+            </Text>
+          </InfoCard>
+
+          <InfoCard
+            style={styles.quickCard}
             onPress={() => navigation.navigate("RelatorioMensal")}
-            style={styles.footerButton}
-            title="Relatório"
-            variant="outline"
-          />
+          >
+            <View style={styles.quickIcon}>
+              <FileText color={colors.primary} size={28} />
+            </View>
+
+            <Text style={styles.quickTitle}>
+              Relatório mensal
+            </Text>
+
+            <Text style={styles.quickSubtitle}>
+              Visualizar relatório
+            </Text>
+          </InfoCard>
         </View>
       </View>
     </Screen>
@@ -212,9 +236,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   summaryValueStrong: {
-    color: colors.text,
+    fontSize: 18,
     fontFamily: typography.fontFamilyBold,
-    fontSize: 13,
+    color: colors.text,
   },
   footerActions: {
     flexDirection: "row",
@@ -222,5 +246,38 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
+  },
+  quickActions: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+
+  quickCard: {
+    flex: 1,
+    minHeight: 135,
+    justifyContent: "space-between",
+  },
+
+  quickIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.softGreen,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+
+  quickTitle: {
+    fontSize: 16,
+    fontFamily: typography.fontFamilyBold,
+    color: colors.primary,
+  },
+
+  quickSubtitle: {
+    marginTop: 4,
+    fontSize: 12,
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
   },
 });

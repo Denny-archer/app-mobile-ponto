@@ -54,17 +54,17 @@ export function PontoRegistradoScreen({ navigation, route }: Props) {
         <View style={styles.successIcon}>
           <CheckCircle2 color={colors.primary} size={44} />
         </View>
-        <Text style={styles.title}>Ponto Registrado!</Text>
+        <Text style={styles.title}>Ponto registrado!</Text>
         <Text style={styles.subtitle}>Registro realizado com sucesso</Text>
 
         {imagemUri ? <Image source={{ uri: imagemUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder} />}
 
         <View style={styles.details}>
-          <DetailRow label="Usuário" value={user?.nome ?? "-"} />
-          <DetailRow label="Email" value={user?.email ?? "-"} />
-          <DetailRow label="Hora" value={formatTime(batida.data_batida)} />
-          <DetailRow label="Data" value={formatDateLong(new Date(batida.data_batida))} />
-          <DetailRow label="Tipo" value={tipoLabel(batida.tipo)} />
+          <DetailRow label="Colaborador:" value={user?.nome ?? "-"} />
+          <DetailRow label="E-mail:" value={user?.email ?? "-"} />
+          <DetailRow label="Hora:" value={formatTime(batida.data_batida)} />
+          <DetailRow label="Data:" value={formatDateLong(new Date(batida.data_batida))} />
+          <DetailRow label="Tipo:" value={tipoLabel(batida.tipo)} />
         </View>
       </InfoCard>
 

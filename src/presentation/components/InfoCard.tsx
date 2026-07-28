@@ -1,5 +1,13 @@
 import type { PropsWithChildren } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
@@ -9,15 +17,29 @@ type InfoCardProps = PropsWithChildren<{
   title?: string;
   subtitle?: string;
   style?: StyleProp<ViewStyle>;
+  onPress?: (event: GestureResponderEvent) => void;
 }>;
 
-export function InfoCard({ title, subtitle, children, style }: InfoCardProps) {
+export function InfoCard({ title, subtitle, children, style, onPress }: InfoCardProps) {
   return (
-    <View style={[styles.card, style]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        style,
+        pressed && onPress && styles.cardPressed,
+      ]}
+    >
       {title ? <Text style={styles.title}>{title}</Text> : null}
+
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      {children ? <View style={title || subtitle ? styles.body : undefined}>{children}</View> : null}
-    </View>
+
+      {children ? (
+        <View style={title || subtitle ? styles.body : undefined}>
+          {children}
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -44,5 +66,8 @@ const styles = StyleSheet.create({
   body: {
     gap: spacing.md,
     marginTop: spacing.md,
+  },
+  cardPressed: {
+    opacity: 0.85,
   },
 });
