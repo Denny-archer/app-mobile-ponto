@@ -1,0 +1,241 @@
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Camera, Clock3 } from "lucide-react-native";
+import { useRef, useState, type ElementRef } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
+
+import { pontoUseCases } from "../../app/dependencies";
+import { queryClient } from "../../app/queryClient";
+import type { AppStackParamList } from "../../navigation/AppNavigator";
+import { formatDateLong, formatTime, toISODate } from "../../shared/utils/dateTime";
+import { useAuthStore } from "../auth/authStore";
+import { AppButton } from "../components/AppButton";
+import { InfoCard } from "../components/InfoCard";
+import { MobileHeader } from "../components/MobileHeader";
+import { Screen } from "../components/Screen";
+import { StatusBadge } from "../components/StatusBadge";
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
+
+type Props = NativeStackScreenProps<AppStackParamList, "RegistrarPonto">;
+
+function tipoLabel(tipo: string) {
+  return tipo === "E" ? "entrada" : "saÃƒÂ­da";
+}
+
+export function RegistrarPontoScreen({ navigation, route }: Props) {
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id ?? 0;
+  const cameraRef = useRef<ElementRef<typeof CameraView>>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const tipo = route.params.tipo;
+
+  async function handleRegistrar() {
+    if (!cameraRef.current || !isCameraReady) {
+      Alert.alert("CÃƒÂ¢mera indisponÃƒÂ­vel", "Aguarde a cÃƒÂ¢mera ficar pronta.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.65, shutterSound: false });
+
+      if (!photo?.uri) {
+        throw new Error("NÃƒÂ£o foi possÃƒÂ­vel capturar a selfie.");
+      }
+
+      const batida = await pontoUseCases.registrarPonto({
+        idUsuario: userId,
+        tipo,
+        imagemUri: photo.uri,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["batidas-dia"] });
+      await queryClient.invalidateQueries({ queryKey: ["saldo-dia"] });
+      navigation.replace("PontoRegistrado", { batida, imagemUri: photo.uri });
+    } catch (error) {
+      Alert.alert("Erro ao registrar ponto", error instanceof Error ? error.message : "Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Screen scroll>
+      <MobileHeader canGoBack onBack={navigation.goBack} title="Registrar ponto" subtitle={formatDateLong(new Date())} action="more" />
+
+      <View style={styles.stack}>
+        <View style={styles.photoHeader}>
+          <Text style={styles.sectionLabel}>Foto do colaborador</Text>
+          <Text style={styles.cameraStatus}>{permission?.granted ? "cÃƒÂ¢mera ativa" : "permissÃƒÂ£o pendente"}</Text>
+        </View>
+
+        <View style={styles.cameraBox}>
+          {permission?.granted ? (
+            <>
+              <CameraView
+                facing="front"
+                mirror
+                mode="picture"
+                onCameraReady={() => setIsCameraReady(true)}
+                style={styles.cameraPreview}
+                ref={cameraRef}
+              />
+              <View style={[styles.corner, styles.cornerTopLeft]} />
+              <View style={[styles.corner, styles.cornerTopRight]} />
+              <View style={[styles.corner, styles.cornerBottomLeft]} />
+              <View style={[styles.corner, styles.cornerBottomRight]} />
+            </>
+          ) : (
+            <View style={styles.permissionBox}>
+              <Camera color={colors.primary} size={36} />
+              <Text style={styles.permissionTitle}>Permita o acesso ÃƒÂ  cÃƒÂ¢mera</Text>
+              <Text style={styles.permissionText}>A selfie ÃƒÂ© obrigatÃƒÂ³ria para validar a batida biomÃƒÂ©trica.</Text>
+              <AppButton onPress={() => { void requestPermission(); }} title="Permitir cÃƒÂ¢mera" />
+            </View>
+          )}
+        </View>
+
+        <InfoCard>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Colaborador</Text>
+            <Text style={styles.detailValue}>{user?.nome ?? "-"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Data</Text>
+            <Text style={styles.detailValue}>{formatDateLong(new Date())}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Tipo e HorÃƒÂ¡rio</Text>
+            <View style={styles.typeRow}>
+              <StatusBadge label={tipo === "E" ? "Entrada" : "SaÃƒÂ­da"} />
+              <Text style={styles.detailValue}>{formatTime(new Date())}</Text>
+            </View>
+          </View>
+        </InfoCard>
+
+        <AppButton
+          leftIcon={<Clock3 color={colors.white} size={17} />}
+          loading={isSubmitting}
+          onPress={handleRegistrar}
+          title={`Registrar ${tipoLabel(tipo)}`}
+        />
+
+        <AppButton
+          onPress={() => navigation.navigate("PontosBatidos")}
+          title="Ver pontos batidos"
+          variant="secondary"
+        />
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  stack: {
+    gap: spacing.md,
+  },
+  photoHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sectionLabel: {
+    color: colors.text,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: 12,
+  },
+  cameraStatus: {
+    color: colors.primary,
+    fontFamily: typography.fontFamilySemiBold,
+    fontSize: 10,
+  },
+  cameraPreview: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  cameraBox: {
+    backgroundColor: colors.softGreen,
+    borderRadius: 14,
+    height: 285,
+    overflow: "hidden",
+  },
+  permissionBox: {
+    alignItems: "center",
+    flex: 1,
+    gap: spacing.sm,
+    justifyContent: "center",
+    padding: spacing.lg,
+  },
+  permissionTitle: {
+    color: colors.text,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: 15,
+    textAlign: "center",
+  },
+  permissionText: {
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  corner: {
+    borderColor: colors.white,
+    height: 40,
+    position: "absolute",
+    width: 40,
+  },
+  cornerTopLeft: {
+    borderLeftWidth: 3,
+    borderTopWidth: 3,
+    left: 24,
+    top: 24,
+  },
+  cornerTopRight: {
+    borderRightWidth: 3,
+    borderTopWidth: 3,
+    right: 24,
+    top: 24,
+  },
+  cornerBottomLeft: {
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    bottom: 24,
+    left: 24,
+  },
+  cornerBottomRight: {
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    bottom: 24,
+    right: 24,
+  },
+  detailRow: {
+    gap: spacing.xs,
+  },
+  detailLabel: {
+    color: colors.muted,
+    fontFamily: typography.fontFamilySemiBold,
+    fontSize: 11,
+  },
+  detailValue: {
+    color: colors.text,
+    flexShrink: 1,
+    fontFamily: typography.fontFamilySemiBold,
+    fontSize: 12,
+    textAlign: "right",
+    textTransform: "capitalize",
+  },
+  typeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+});
