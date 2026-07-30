@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { Batida, TipoBatida } from "../domain/ponto/entities/Batida";
+import { AlterarSenhaScreen } from "../presentation/conta/AlterarSenhaScreen";
 import { PontosBatidosScreen } from "../presentation/historico/PontosBatidosScreen";
 import { PontoHomeScreen } from "../presentation/ponto/PontoHomeScreen";
 import { PontoRegistradoScreen } from "../presentation/ponto/PontoRegistradoScreen";
@@ -13,6 +14,7 @@ export type AppStackParamList = {
   PontoRegistrado: { batida: Batida; imagemUri?: string };
   PontosBatidos: undefined;
   RelatorioMensal: undefined;
+  AlterarSenha: undefined;
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -25,6 +27,7 @@ export function AppNavigator() {
       <Stack.Screen name="PontoRegistrado" component={PontoRegistradoScreen} />
       <Stack.Screen name="PontosBatidos" component={PontosBatidosScreen} />
       <Stack.Screen name="RelatorioMensal" component={RelatorioMensalScreen} />
+      <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
     </Stack.Navigator>
   );
 }

@@ -6,8 +6,9 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { pontoUseCases } from "../../app/dependencies";
 import { queryClient } from "../../app/queryClient";
+import { persistCapturedImage } from "../../core/files/persistCapturedImage";
 import type { AppStackParamList } from "../../navigation/AppNavigator";
-import { formatDateLong, formatTime, toISODate } from "../../shared/utils/dateTime";
+import { formatDateLong, formatTime } from "../../shared/utils/dateTime";
 import { useAuthStore } from "../auth/authStore";
 import { AppButton } from "../components/AppButton";
 import { InfoCard } from "../components/InfoCard";
@@ -34,6 +35,11 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
   const tipo = route.params.tipo;
 
   async function handleRegistrar() {
+    if (!userId) {
+      Alert.alert("Sessão inválida", "Faça login novamente para registrar o ponto.");
+      return;
+    }
+
     if (!cameraRef.current || !isCameraReady) {
       Alert.alert("Câmera indisponível", "Aguarde a câmera ficar pronta.");
       return;
@@ -47,15 +53,16 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
         throw new Error("Não foi possível capturar a selfie.");
       }
 
+      const imagemUri = await persistCapturedImage(photo.uri);
       const batida = await pontoUseCases.registrarPonto({
         idUsuario: userId,
         tipo,
-        imagemUri: photo.uri,
+        imagemUri,
       });
 
       await queryClient.invalidateQueries({ queryKey: ["batidas-dia"] });
       await queryClient.invalidateQueries({ queryKey: ["saldo-dia"] });
-      navigation.replace("PontoRegistrado", { batida, imagemUri: photo.uri });
+      navigation.replace("PontoRegistrado", { batida, imagemUri });
     } catch (error) {
       Alert.alert("Erro ao registrar ponto", error instanceof Error ? error.message : "Tente novamente.");
     } finally {
@@ -109,7 +116,7 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
             <Text style={styles.detailValue}>{formatDateLong(new Date())}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tipo e Horário</Text>
+            <Text style={styles.detailLabel}>Tipo e horário</Text>
             <View style={styles.typeRow}>
               <StatusBadge label={tipo === "E" ? "Entrada" : "Saída"} />
               <Text style={styles.detailValue}>{formatTime(new Date())}</Text>
@@ -231,7 +238,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamilySemiBold,
     fontSize: 12,
     textAlign: "right",
-    textTransform: "capitalize",
   },
   typeRow: {
     alignItems: "center",

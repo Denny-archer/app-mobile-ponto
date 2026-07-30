@@ -17,4 +17,7 @@ export const colors = {
   successSoft: "#DFF3E8",
   white: "#FFFFFF",
   black: "#000000",
+  pressed: "#F2F4F7",
+  overlay: "rgba(16, 24, 40, 0.45)",
+  
 };

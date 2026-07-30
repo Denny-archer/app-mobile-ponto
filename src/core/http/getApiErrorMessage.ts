@@ -5,6 +5,10 @@ export function getApiErrorMessage(error: unknown, fallback = "Erro inesperado."
     return fallback;
   }
 
+  if (error.response?.status === 401) {
+    return "Usuário ou senha incorretos.";
+  }
+
   const detail = error.response?.data?.detail;
 
   if (typeof detail === "string") {
