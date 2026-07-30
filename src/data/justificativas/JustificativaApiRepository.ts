@@ -1,6 +1,12 @@
 import type { AxiosInstance } from "axios";
 
-import type { Justificativa, ListarJustificativasFiltro, SolicitarInclusaoInput, SolicitarRemocaoInput } from "../../domain/justificativas/entities/Justificativa";
+import type {
+  Justificativa,
+  ListarJustificativasFiltro,
+  ResponderJustificativaInput,
+  SolicitarInclusaoInput,
+  SolicitarRemocaoInput,
+} from "../../domain/justificativas/entities/Justificativa";
 import type { JustificativaRepository } from "../../domain/justificativas/repositories/JustificativaRepository";
 
 type JustificativasResponse = {
@@ -14,10 +20,13 @@ export class JustificativaApiRepository implements JustificativaRepository {
     const { data } = await this.http.get<JustificativasResponse>("/justificativas/", {
       params: {
         id_requerente: filtro?.idRequerente,
+        id_departamento_requerente: filtro?.idDepartamentoRequerente,
         data_requerida: filtro?.dataRequerida,
+        id_validador: filtro?.idValidador,
         status: filtro?.status,
         skip: filtro?.skip,
         limit: filtro?.limit,
+        sort: filtro?.sort,
       },
     });
 
@@ -41,6 +50,14 @@ export class JustificativaApiRepository implements JustificativaRepository {
         id_batida: input.idBatida,
         texto: input.texto,
       },
+    });
+
+    return data;
+  }
+
+  async responderJustificativa(input: ResponderJustificativaInput): Promise<Justificativa> {
+    const { data } = await this.http.patch<Justificativa>(`/justificativas/${input.idJustificativa}`, {
+      resposta: input.resposta,
     });
 
     return data;

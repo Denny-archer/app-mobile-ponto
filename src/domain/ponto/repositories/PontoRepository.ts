@@ -4,6 +4,7 @@ export type ListarBatidasFiltro = {
   idUsuario?: number;
   dataInicio?: string;
   dataFim?: string;
+  sort?: boolean;
 };
 
 export type EspelhoFiltro = {

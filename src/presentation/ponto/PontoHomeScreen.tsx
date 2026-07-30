@@ -1,7 +1,7 @@
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Download, FileText, Settings, TimerReset } from "lucide-react-native";
+import { Briefcase, CalendarDays, Download, FileText, Settings, TimerReset } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -11,6 +11,7 @@ import { downloadAuthenticatedPdf } from "../../core/files/downloadAuthenticated
 import type { AppStackParamList } from "../../navigation/AppNavigator";
 import { formatDateLong, formatTime, toISODate } from "../../shared/utils/dateTime";
 import { getNextTipoBatida, getPrimeiraEntrada, getUltimaBatida, getUltimaSaida } from "../../shared/utils/ponto";
+import { canAccessGestao } from "../../shared/utils/roles";
 import { useAuthStore } from "../auth/authStore";
 import { AccountActionsSheet } from "../components/AccountActionsSheet";
 import { AppButton } from "../components/AppButton";
@@ -88,6 +89,7 @@ export function PontoHomeScreen({ navigation }: Props) {
   const totalRegistros = resumoDiario?.qtd_batidas ?? batidas.length;
   const saldoNegativo = saldoDiaOficial.trim().startsWith("-");
   const resumoAtualizando = batidasQuery.isFetching || saldoQuery.isFetching;
+  const podeAcessarGestao = canAccessGestao(user);
 
   async function handleComprovante() {
     if (!ultimaBatida) {
@@ -232,6 +234,18 @@ export function PontoHomeScreen({ navigation }: Props) {
               <Text style={styles.quickSubtitle}>Visualizar relatório</Text>
             </InfoCard>
           </View>
+
+          {podeAcessarGestao ? (
+            <InfoCard style={styles.managementCard} onPress={() => navigation.navigate("GestaoHome")}>
+              <View style={styles.managementIcon}>
+                <Briefcase color={colors.primary} size={26} />
+              </View>
+              <View style={styles.managementContent}>
+                <Text style={styles.managementTitle}>Gestão</Text>
+                <Text style={styles.managementSubtitle}>Consultar colaboradores, banco de horas e justificativas</Text>
+              </View>
+            </InfoCard>
+          ) : null}
         </View>
       </Screen>
 
@@ -380,6 +394,34 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: 12,
+    marginTop: 4,
+  },
+  managementCard: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  managementIcon: {
+    alignItems: "center",
+    backgroundColor: colors.softGreen,
+    borderRadius: 28,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
+  },
+  managementContent: {
+    flex: 1,
+  },
+  managementTitle: {
+    color: colors.primary,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: 16,
+  },
+  managementSubtitle: {
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 4,
   },
 });

@@ -6,6 +6,7 @@ export type Justificativa = {
   departamento_requerente?: string;
   id_requerente?: number;
   data_requerida: string;
+  id_batida_referenciada?: number | null;
   tipo: string;
   texto: string;
   validador?: string | null;
@@ -17,10 +18,13 @@ export type Justificativa = {
 
 export type ListarJustificativasFiltro = {
   idRequerente?: number;
+  idDepartamentoRequerente?: number;
   dataRequerida?: string;
+  idValidador?: number;
   status?: string;
   skip?: number;
   limit?: number;
+  sort?: boolean;
 };
 
 export type SolicitarInclusaoInput = {
@@ -31,4 +35,9 @@ export type SolicitarInclusaoInput = {
 export type SolicitarRemocaoInput = {
   idBatida: number;
   texto: string;
+};
+
+export type ResponderJustificativaInput = {
+  idJustificativa: number;
+  resposta: 2 | 3;
 };

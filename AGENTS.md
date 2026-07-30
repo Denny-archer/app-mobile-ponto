@@ -303,3 +303,43 @@ npx expo config --type public
 - Avaliar se o backend deve receber localizacao no registro de ponto em etapa futura.
 - Revisar UX de justificativa para datas/horarios com mascara ou seletor nativo.
 - Avaliar build iOS via EAS quando houver conta Apple Developer disponivel.
+## Fluxo de Gestão Mobile
+
+A v1 do fluxo de gestão foi adicionada para perfis de gestão, mantendo o padrão de Clean Architecture já usado no app.
+
+Perfis com entrada visível na Home:
+
+- Administrador
+- Gestor RH
+- Chefe de Setor
+
+Perfis sem entrada visível nesta etapa:
+
+- Colaborador
+- Visualizador
+
+Telas adicionadas:
+
+- `GestaoHome`: hub com atalhos de gestão.
+- `GestaoColaboradores`: busca por nome, e-mail ou matrícula, filtro por status e departamento.
+- `GestaoColaboradorDetalhe`: consulta colaborador, batidas do dia, saldo diário, espelho mensal, justificativas recentes, ajustes e download de relatório mensal.
+- `GestaoJustificativas`: lista justificativas por status e permite aprovar/reprovar solicitações.
+
+APIs usadas:
+
+- `GET /usuarios/`
+- `GET /departamentos/`
+- `GET /batidas/`
+- `GET /batidas/saldo_diario/{id_usuario}`
+- `GET /batidas/espelho/{id_usuario}`
+- `GET /batidas/relatorio-mensal/{id_usuario}`
+- `GET /justificativas/`
+- `PATCH /justificativas/{id_justificativa}`
+- `GET /ajustes/{id_usuario}`
+
+Regras importantes:
+
+- A tela só esconde recursos visualmente; a permissão real continua no backend.
+- Após aprovar/reprovar justificativa, invalidar queries de justificativas, batidas, saldo diário e espelho para evitar dados desatualizados.
+- Não calcular saldo oficial no mobile quando o backend já retorna `tempo_trabalhado`, `saldo_dia` ou espelho.
+- O `tipo_usuario` pode vir como número ou texto; use `normalizeUserRole`/`canAccessGestao` em vez de comparar direto.

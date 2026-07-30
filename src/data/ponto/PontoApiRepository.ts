@@ -39,6 +39,7 @@ export class PontoApiRepository implements PontoRepository {
         id_usuario: filtro?.idUsuario,
         data_inicio: filtro?.dataInicio,
         data_fim: filtro?.dataFim,
+        sort: filtro?.sort,
       },
     });
 

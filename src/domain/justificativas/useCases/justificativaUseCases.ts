@@ -1,4 +1,9 @@
-import type { ListarJustificativasFiltro, SolicitarInclusaoInput, SolicitarRemocaoInput } from "../entities/Justificativa";
+import type {
+  ListarJustificativasFiltro,
+  ResponderJustificativaInput,
+  SolicitarInclusaoInput,
+  SolicitarRemocaoInput,
+} from "../entities/Justificativa";
 import type { JustificativaRepository } from "../repositories/JustificativaRepository";
 
 export function createJustificativaUseCases(repository: JustificativaRepository) {
@@ -13,6 +18,10 @@ export function createJustificativaUseCases(repository: JustificativaRepository)
 
     solicitarRemocao(input: SolicitarRemocaoInput) {
       return repository.solicitarRemocao(input);
+    },
+
+    responderJustificativa(input: ResponderJustificativaInput) {
+      return repository.responderJustificativa(input);
     },
   };
 }
