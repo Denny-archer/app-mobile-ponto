@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { authUseCases } from "../../app/dependencies";
+import { queryClient } from "../../app/queryClient";
 import { getApiErrorMessage } from "../../core/http/getApiErrorMessage";
 import type { User } from "../../domain/auth/entities/User";
 import type { LoginCredentials } from "../../domain/auth/repositories/AuthRepository";
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ status: "loading", error: null });
       const user = await authUseCases.signIn(credentials);
+      queryClient.clear();
       set({ user, status: "authenticated" });
     } catch (error) {
       set({
@@ -47,6 +49,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   async signOut() {
     await authUseCases.signOut();
+    queryClient.clear();
     set({ user: null, status: "unauthenticated", error: null });
   },
 }));

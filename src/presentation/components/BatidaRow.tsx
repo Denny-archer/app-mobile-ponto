@@ -1,4 +1,4 @@
-import { LogIn, LogOut } from "lucide-react-native";
+import { FileCheck2, LogIn, LogOut } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { Batida } from "../../domain/ponto/entities/Batida";
@@ -9,7 +9,16 @@ import { typography } from "../theme/typography";
 import { StatusBadge } from "./StatusBadge";
 
 function getTipoLabel(tipo: string) {
-  return tipo === "E" ? "Entrada" : tipo === "S" ? "Saída" : tipo;
+  if (tipo === "E") return "Entrada";
+  if (tipo === "S") return "Saída";
+  if (tipo === "J") return "Justificativa";
+  return tipo;
+}
+
+function getTipoIcon(tipo: string) {
+  if (tipo === "E") return LogIn;
+  if (tipo === "S") return LogOut;
+  return FileCheck2;
 }
 
 type BatidaRowProps = {
@@ -19,7 +28,7 @@ type BatidaRowProps = {
 };
 
 export function BatidaRow({ batida, atual, onPress }: BatidaRowProps) {
-  const Icon = batida.tipo === "E" ? LogIn : LogOut;
+  const Icon = getTipoIcon(batida.tipo);
 
   return (
     <Pressable accessibilityRole={onPress ? "button" : undefined} onPress={onPress} style={styles.row}>

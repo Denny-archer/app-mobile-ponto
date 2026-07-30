@@ -1,11 +1,13 @@
 import type { Batida, EspelhoPontoItem, TipoBatida } from "../../domain/ponto/entities/Batida";
 import { parseTimeToMinutes } from "./dateTime";
 
+function isRegistroValidoParaSequencia(tipo: string) {
+  return tipo === "E" || tipo === "S" || tipo === "J";
+}
+
 export function getNextTipoBatida(batidas: Batida[]): TipoBatida {
-  if (batidas.length === 0) return "E";
-  const sorted = [...batidas].sort((a, b) => new Date(a.data_batida).getTime() - new Date(b.data_batida).getTime());
-  const last = sorted[sorted.length - 1];
-  return last.tipo === "E" ? "S" : "E";
+  const totalRegistros = batidas.filter((batida) => isRegistroValidoParaSequencia(batida.tipo)).length;
+  return totalRegistros % 2 === 0 ? "E" : "S";
 }
 
 export function getPrimeiraEntrada(batidas: Batida[]) {

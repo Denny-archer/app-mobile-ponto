@@ -18,7 +18,7 @@ export class PontoApiRepository implements PontoRepository {
     const formData = new FormData();
     formData.append("imagem", {
       uri: input.imagemUri,
-      name: "selfie.jpg",
+      name: `selfie-${Date.now()}.jpg`,
       type: "image/jpeg",
     } as unknown as Blob);
 
@@ -27,9 +27,6 @@ export class PontoApiRepository implements PontoRepository {
         id_usuario: input.idUsuario,
         tipo: input.tipo,
         descricao: input.descricao,
-      },
-      headers: {
-        "Content-Type": "multipart/form-data",
       },
     });
 
@@ -42,6 +39,7 @@ export class PontoApiRepository implements PontoRepository {
         id_usuario: filtro?.idUsuario,
         data_inicio: filtro?.dataInicio,
         data_fim: filtro?.dataFim,
+        sort: filtro?.sort,
       },
     });
 

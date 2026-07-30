@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import type { Batida } from "../../domain/ponto/entities/Batida";
-import { formatTime, toApiDateTime, toISODate } from "../../shared/utils/dateTime";
+import { formatDateShort, formatTime, toApiDateTime, toISODate } from "../../shared/utils/dateTime";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -14,35 +14,70 @@ type JustificativaModalProps = {
   visible: boolean;
   mode: Mode;
   selectedBatida?: Batida | null;
+  batidasRemocao?: Batida[];
   loading?: boolean;
+  loadingBatidas?: boolean;
   onClose: () => void;
+  onRequestBatidas?: () => Promise<unknown> | unknown;
   onSubmitInclusao: (input: { dataRequerida: string; texto: string }) => Promise<void>;
   onSubmitRemocao: (input: { idBatida: number; texto: string }) => Promise<void>;
 };
 
-export function JustificativaModal({ visible, mode, selectedBatida, loading, onClose, onSubmitInclusao, onSubmitRemocao }: JustificativaModalProps) {
+function tipoLabel(tipo: string) {
+  if (tipo === "E") return "Entrada";
+  if (tipo === "S") return "Saída";
+  if (tipo === "J") return "Justificativa";
+  return tipo;
+}
+
+export function JustificativaModal({
+  visible,
+  mode,
+  selectedBatida,
+  batidasRemocao = [],
+  loading,
+  loadingBatidas,
+  onClose,
+  onRequestBatidas,
+  onSubmitInclusao,
+  onSubmitRemocao,
+}: JustificativaModalProps) {
   const [activeMode, setActiveMode] = useState<Mode>(mode);
+  const [selectedRemovalBatida, setSelectedRemovalBatida] = useState<Batida | null>(selectedBatida ?? null);
   const [date, setDate] = useState(toISODate());
   const [time, setTime] = useState(formatTime(new Date()));
   const [texto, setTexto] = useState("");
 
   useEffect(() => {
     setActiveMode(mode);
+    setSelectedRemovalBatida(selectedBatida ?? null);
     setDate(toISODate());
     setTime(formatTime(new Date()));
     setTexto("");
-  }, [mode, visible]);
+  }, [mode, selectedBatida, visible]);
+
+  useEffect(() => {
+    if (visible && activeMode === "remocao") {
+      void onRequestBatidas?.();
+    }
+  }, [activeMode, onRequestBatidas, visible]);
 
   async function handleSubmit() {
-    if (activeMode === "remocao" && selectedBatida) {
-      await onSubmitRemocao({ idBatida: selectedBatida.id, texto });
+    if (activeMode === "remocao") {
+      if (!selectedRemovalBatida) return;
+      await onSubmitRemocao({ idBatida: selectedRemovalBatida.id, texto });
       return;
     }
 
     await onSubmitInclusao({ dataRequerida: toApiDateTime(date, time), texto });
   }
 
-  const removalDisabled = activeMode === "remocao" && !selectedBatida;
+  function handleModeChange(nextMode: Mode) {
+    setActiveMode(nextMode);
+  }
+
+  const removalDisabled = activeMode === "remocao" && !selectedRemovalBatida;
+  const submitDisabled = removalDisabled || !texto.trim();
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
@@ -58,14 +93,14 @@ export function JustificativaModal({ visible, mode, selectedBatida, loading, onC
           <Text style={styles.description}>
             {activeMode === "inclusao"
               ? "Informe o horário que não apareceu nas batidas do dia e envie a justificativa."
-              : "Selecione uma batida registrada indevidamente e descreva o motivo da remoção."}
+              : "Selecione a batida registrada indevidamente e descreva o motivo da remoção."}
           </Text>
 
           <View style={styles.segmented}>
-            <Pressable onPress={() => setActiveMode("inclusao")} style={[styles.segment, activeMode === "inclusao" && styles.segmentActive]}>
+            <Pressable onPress={() => handleModeChange("inclusao")} style={[styles.segment, activeMode === "inclusao" && styles.segmentActive]}>
               <Text style={[styles.segmentText, activeMode === "inclusao" && styles.segmentTextActive]}>Inclusão</Text>
             </Pressable>
-            <Pressable onPress={() => setActiveMode("remocao")} style={[styles.segment, activeMode === "remocao" && styles.segmentDanger]}>
+            <Pressable onPress={() => handleModeChange("remocao")} style={[styles.segment, activeMode === "remocao" && styles.segmentDanger]}>
               <Text style={[styles.segmentText, activeMode === "remocao" && styles.segmentTextDanger]}>Remoção</Text>
             </Pressable>
           </View>
@@ -78,9 +113,39 @@ export function JustificativaModal({ visible, mode, selectedBatida, loading, onC
               <TextInput value={time} onChangeText={setTime} placeholder="HH:mm" style={styles.input} />
             </View>
           ) : (
-            <View style={styles.selectedBox}>
-              <Text style={styles.selectedTime}>{selectedBatida ? formatTime(selectedBatida.data_batida) : "Nenhuma batida selecionada"}</Text>
-              <Text style={styles.selectedMeta}>{selectedBatida ? "Batida selecionada para remoção" : "Toque em uma batida antes de solicitar remoção."}</Text>
+            <View style={styles.form}>
+              <Text style={styles.label}>Batida para remoção</Text>
+
+              {loadingBatidas ? (
+                <View style={styles.loadingBox}>
+                  <ActivityIndicator color={colors.primary} />
+                  <Text style={styles.loadingText}>Buscando batidas do dia...</Text>
+                </View>
+              ) : batidasRemocao.length === 0 ? (
+                <View style={styles.emptyBox}>
+                  <Text style={styles.emptyTitle}>Nenhuma batida disponível</Text>
+                  <Text style={styles.emptyText}>Não encontramos batidas registradas para remover neste dia.</Text>
+                </View>
+              ) : (
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false} style={styles.batidasList}>
+                  {batidasRemocao.map((batida) => {
+                    const selected = selectedRemovalBatida?.id === batida.id;
+                    return (
+                      <Pressable
+                        key={batida.id}
+                        onPress={() => setSelectedRemovalBatida(batida)}
+                        style={[styles.batidaOption, selected && styles.batidaOptionSelected]}
+                      >
+                        <View style={styles.batidaOptionContent}>
+                          <Text style={styles.batidaOptionTime}>{formatTime(batida.data_batida)}</Text>
+                          <Text style={styles.batidaOptionMeta}>{tipoLabel(batida.tipo)} · {formatDateShort(batida.data_batida)}</Text>
+                        </View>
+                        <Text style={[styles.batidaOptionAction, selected && styles.batidaOptionActionSelected]}>{selected ? "Selecionada" : "Selecionar"}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
             </View>
           )}
 
@@ -99,7 +164,7 @@ export function JustificativaModal({ visible, mode, selectedBatida, loading, onC
 
           <View style={styles.actions}>
             <AppButton disabled={loading} onPress={onClose} style={styles.actionButton} title="Cancelar" variant="outline" />
-            <AppButton disabled={removalDisabled || !texto.trim()} loading={loading} onPress={handleSubmit} style={styles.actionButton} title="Enviar" variant={activeMode === "remocao" ? "danger" : "primary"} />
+            <AppButton disabled={submitDisabled} loading={loading} onPress={handleSubmit} style={styles.actionButton} title="Enviar" variant={activeMode === "remocao" ? "danger" : "primary"} />
           </View>
         </View>
       </View>
@@ -118,6 +183,7 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: colors.surface,
     borderRadius: 14,
+    maxHeight: "92%",
     padding: spacing.lg,
     width: "100%",
   },
@@ -195,28 +261,85 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   textArea: {
-    minHeight: 90,
+    minHeight: 88,
     paddingTop: spacing.sm,
     textAlignVertical: "top",
   },
-  selectedBox: {
-    backgroundColor: colors.successSoft,
-    borderColor: colors.primary,
+  loadingBox: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
     borderRadius: 10,
     borderWidth: 1,
-    marginTop: spacing.md,
+    gap: spacing.sm,
+    minHeight: 72,
+    justifyContent: "center",
     padding: spacing.md,
   },
-  selectedTime: {
-    color: colors.primary,
-    fontFamily: typography.fontFamilyBold,
-    fontSize: 20,
+  loadingText: {
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: 12,
   },
-  selectedMeta: {
-    color: colors.primary,
+  emptyBox: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
+  emptyTitle: {
+    color: colors.text,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: 14,
+  },
+  emptyText: {
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  batidasList: {
+    maxHeight: 178,
+  },
+  batidaOption: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+  },
+  batidaOptionSelected: {
+    backgroundColor: colors.successSoft,
+    borderColor: colors.primary,
+  },
+  batidaOptionContent: {
+    flex: 1,
+  },
+  batidaOptionTime: {
+    color: colors.text,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: 16,
+  },
+  batidaOptionMeta: {
+    color: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: 11,
     marginTop: 2,
+  },
+  batidaOptionAction: {
+    color: colors.muted,
+    fontFamily: typography.fontFamilySemiBold,
+    fontSize: 11,
+  },
+  batidaOptionActionSelected: {
+    color: colors.primary,
   },
   actions: {
     flexDirection: "row",
