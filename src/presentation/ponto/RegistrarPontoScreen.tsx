@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import NetInfo from "@react-native-community/netinfo";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Camera, Clock3 } from "lucide-react-native";
 import { useRef, useState, type ElementRef } from "react";
@@ -7,6 +8,7 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 import { pontoUseCases } from "../../app/dependencies";
 import { queryClient } from "../../app/queryClient";
 import { persistCapturedImage } from "../../core/files/persistCapturedImage";
+import { getApiErrorMessage, isApiConnectionError } from "../../core/http/getApiErrorMessage";
 import type { AppStackParamList } from "../../navigation/AppNavigator";
 import { formatDateLong, formatTime } from "../../shared/utils/dateTime";
 import { useAuthStore } from "../auth/authStore";
@@ -23,6 +25,10 @@ type Props = NativeStackScreenProps<AppStackParamList, "RegistrarPonto">;
 
 function tipoLabel(tipo: string) {
   return tipo === "E" ? "entrada" : "saída";
+}
+
+function getPontoNaoEnviadoMessage(tipo: string) {
+  return `Seu ponto não foi enviado. Conecte-se à internet e toque em Registrar ${tipoLabel(tipo)} novamente.`;
 }
 
 export function RegistrarPontoScreen({ navigation, route }: Props) {
@@ -47,6 +53,13 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
 
     try {
       setIsSubmitting(true);
+      const networkState = await NetInfo.fetch();
+
+      if (!networkState.isConnected || networkState.isInternetReachable === false) {
+        Alert.alert("Sem conexão com a internet", getPontoNaoEnviadoMessage(tipo));
+        return;
+      }
+
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.65, shutterSound: false });
 
       if (!photo?.uri) {
@@ -64,7 +77,12 @@ export function RegistrarPontoScreen({ navigation, route }: Props) {
       await queryClient.invalidateQueries({ queryKey: ["saldo-dia"] });
       navigation.replace("PontoRegistrado", { batida, imagemUri });
     } catch (error) {
-      Alert.alert("Erro ao registrar ponto", error instanceof Error ? error.message : "Tente novamente.");
+      if (isApiConnectionError(error)) {
+        Alert.alert("Sem conexão com a internet", getPontoNaoEnviadoMessage(tipo));
+        return;
+      }
+
+      Alert.alert("Erro ao registrar ponto", getApiErrorMessage(error, "Não foi possível registrar o ponto. Tente novamente."));
     } finally {
       setIsSubmitting(false);
     }
