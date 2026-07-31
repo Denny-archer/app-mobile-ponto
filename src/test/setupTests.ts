@@ -1,4 +1,36 @@
+import { notifyManager } from "@tanstack/react-query";
+import { act, cleanup } from "@testing-library/react-native";
 import type { ReactNode } from "react";
+
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+notifyManager.setNotifyFunction((callback) => {
+  act(() => {
+    callback();
+  });
+});
+
+notifyManager.setBatchNotifyFunction((callback) => {
+  act(() => {
+    callback();
+  });
+});
+
+const originalConsoleError = console.error.bind(console);
+
+console.error = (...args: unknown[]) => {
+  const message = String(args[0] ?? "");
+
+  if (message.includes("You called act(async () => ...) without await")) {
+    return;
+  }
+
+  originalConsoleError(...args);
+};
+
+afterEach(() => {
+  cleanup();
+});
 
 type MockComponentProps = Record<string, unknown> & {
   children?: ReactNode;
@@ -24,9 +56,18 @@ jest.mock("expo-camera", () => {
   const { View } = jest.requireActual<typeof import("react-native")>("react-native");
 
   const CameraView = React.forwardRef<{ takePictureAsync: jest.Mock }, MockComponentProps>((props, ref) => {
+    const didCallReady = React.useRef(false);
+
     React.useImperativeHandle(ref, () => ({
       takePictureAsync: jest.fn(async () => ({ uri: "file:///selfie.jpg" })),
     }));
+
+    React.useEffect(() => {
+      if (!didCallReady.current && typeof props.onCameraReady === "function") {
+        didCallReady.current = true;
+        props.onCameraReady();
+      }
+    }, []);
 
     return React.createElement(
       View,
@@ -126,6 +167,34 @@ jest.mock("@react-native-community/netinfo", () => {
     default: netInfo,
     ...netInfo,
   };
+});
+
+jest.mock("react-native-safe-area-context", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual<typeof import("react-native")>("react-native");
+
+  return {
+    SafeAreaProvider: ({ children }: { children: ReactNode }) => React.createElement(View, null, children),
+    SafeAreaView: ({ children }: { children: ReactNode }) => React.createElement(View, null, children),
+    initialWindowMetrics: {
+      frame: { height: 0, width: 0, x: 0, y: 0 },
+      insets: { bottom: 0, left: 0, right: 0, top: 0 },
+    },
+    useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
+  };
+});
+
+jest.mock("lucide-react-native", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
+
+  return new Proxy(
+    {},
+    {
+      get: (_target, iconName: string) => (props: MockComponentProps) =>
+        React.createElement(Text, { ...props, accessibilityLabel: iconName }, iconName),
+    },
+  );
 });
 
 jest.mock("@expo-google-fonts/inter", () => ({

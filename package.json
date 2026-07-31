@@ -48,7 +48,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "start:go": "expo start --go",
     "android:go": "expo start --go --android",
